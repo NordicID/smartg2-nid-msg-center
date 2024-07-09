@@ -41,7 +41,6 @@ function getActions(db)
 	const on_touch = 'title="Touch" onclick=touchSomeMessage(' + id + ')';
 	line = '<div class="appActions">';
 	line += '<i class="fas fa-trash-alt" ' + on_remove + '></i>';
-	line += '<i class="fas fa-info-circle text-info" ' + on_touch + '></i>';
 	if (action && action.api && action.params) {
 		const api = '"' + action.api.toString() + '"';
 		const params = '"' + action.params.toString() + '"';
@@ -51,6 +50,16 @@ function getActions(db)
 	}
 	line += '</div>';
 	return line;
+}
+
+function readAllMessages()
+{
+	fr22BackendGet("/api/builtin/msgcenter/get")
+		.done(function(json) {
+			json["data"].forEach(i => {
+				touchSomeMessage(i["doc_id"]);
+			});
+		});
 }
 
 $(document).ready(function() {
@@ -69,6 +78,17 @@ $(document).ready(function() {
 		},
 		rowId: 'doc_id',
 		columns: [
+			{ data: 'level', className: "text-right", render: function (data, type, row){
+					let icon = '';
+					if(data === 'warning'){
+						icon = '-circle';
+					}
+					else if(data === 'error'){
+						icon = '-triangle';
+					}
+					return '<i class="fas fa-exclamation'+ icon +'"></i>';
+				} 
+			},
 			{ data: 'stamp', render:
 				function (data, type, row) {
 					const date = new Date(Number(data) * 1000);
@@ -76,7 +96,6 @@ $(document).ready(function() {
 					return stamp;
 				}
 			},
-			{ data: 'level', className: "text-right" },
 			{ data: 'msg', render:
 				function (data, type, row) {
 					let msg = data
@@ -92,9 +111,11 @@ $(document).ready(function() {
 			{ "width": "10%", "targets": 0 },
 			{ "width": "3%", "targets": 1 },
 			{ "width": "3%", "targets": 3 },
+			{ "type": "date-eu", "targets": 1 }
 		],
-		paging: false,
-		ordering: false,
+		order: [1, 'desc'],
+		paging: true,
+		ordering: true,
 		searching: false,
 		info: false
 	});
@@ -125,4 +146,6 @@ $(document).ready(function() {
 				setTimeout($("#msgCenterList").DataTable().ajax.reload, 200);
 			})
 	});
+
+	readAllMessages();
 });
