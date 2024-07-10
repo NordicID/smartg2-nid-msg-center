@@ -20,10 +20,10 @@ class MsgCenterServer:
             path = os.path.abspath('webui_files')
         else:
             path = '/usr/lib/nid-web-api-backend-plugins/msgcenter'
-        pages=[('msgcenter', 'index.html')]
+
         self.rpc = nid_rpc.NidRpcPlugin('builtin',
                                         'msgcenter',
-                                        path, pages=pages)
+                                        path)
 
         self.rpc.add_callback('/conf/get', self.conf_get)
         self.rpc.add_callback('/add', self.add)
