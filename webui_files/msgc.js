@@ -62,6 +62,17 @@ function readAllMessages()
 		});
 }
 
+function clearAllMessages()
+{
+	console.log("Clearing");
+	fr22BackendGet("/api/builtin/msgcenter/get")
+	.done(function(json) {
+		json["data"].forEach(i => {
+			removeSomeMessage(i["doc_id"]);
+		});
+	});
+}
+
 $(document).ready(function() {
 	$('#msgCenterList').DataTable({
 		ajax: {
@@ -118,6 +129,12 @@ $(document).ready(function() {
 		ordering: true,
 		searching: false,
 		info: false
+	});
+
+	$("#clearMessages").click(function () {
+		clearAllMessages();
+		fr22ShowToast('success', 'Message list cleared!');
+		setTimeout($("#msgCenterList").DataTable().ajax.reload, 200);
 	});
 
 	$("#sendTestMessage").click(function() {
