@@ -14,7 +14,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
     def setUp(self):
         ''' Setup unittest object '''
         self.setUpPyfakefs()
-        self.fs.create_file("/systemrw/dummy", contents="XXX")
+        self.fs.create_file("/systemrw/nid/dummy", contents="XXX")
         self.srv = MsgCenterServer()
 
     def _add_retval_ok(self, retval):
@@ -34,7 +34,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         msg_list = await self.srv.get({})
         self.assertTrue('data' in msg_list)
         self.assertTrue('msg' in msg_list['data'][0])
-        entry = msg_list['data'][0]
+        entry = msg_list['data'][1]
         # print('OLD:', entry['msg'])
         self.assertTrue(entry['msg'] == old_msg)
         payload.update({'doc_id': doc_id})
@@ -44,7 +44,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         msg_list = await self.srv.get({})
         self.assertTrue('data' in msg_list)
         self.assertTrue('msg' in msg_list['data'][0])
-        entry = msg_list['data'][0]
+        entry = msg_list['data'][1]
         # print('NEW:', entry['msg'])
         self.assertTrue(entry['msg'] == new_msg)
 
@@ -64,7 +64,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         msg_list = await self.srv.get({})
         self.assertTrue('data' in msg_list)
         self.assertTrue('msg' in msg_list['data'][0])
-        entry = msg_list['data'][0]
+        entry = msg_list['data'][1]
         # print('OLD:', entry['msg'])
         self.assertTrue(entry['msg'] == old_msg)
         payload.update({'msg': new_msg})
@@ -73,7 +73,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         msg_list = await self.srv.get({})
         self.assertTrue('data' in msg_list)
         self.assertTrue('msg' in msg_list['data'][0])
-        entry = msg_list['data'][0]
+        entry = msg_list['data'][1]
         # print('NEW:', entry['msg'])
         self.assertTrue(entry['msg'] == new_msg)
 

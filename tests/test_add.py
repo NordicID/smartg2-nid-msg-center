@@ -14,7 +14,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
     def setUp(self):
         ''' Setup unittest object '''
         self.setUpPyfakefs()
-        self.fs.create_file("/systemrw/dummy", contents="XXX")
+        self.fs.create_file("/systemrw/nid/dummy", contents="XXX")
         self.srv = MsgCenterServer()
 
     def _add_retval_ok(self, retval):
@@ -68,6 +68,18 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         msg_list = await self.srv.get(payload)
         self.assertTrue('data' in msg_list)
         self.assertFalse(msg_list['data'])
+
+    async def test_welcome_message_created(self):
+        msg_list = await self.srv.get([])
+        self.assertTrue('data' in msg_list)
+        self.assertTrue('msg' in msg_list['data'][0])
+        entry = msg_list['data'][0]
+        self.assertTrue(entry['level'] == 'reset')
+        self.assertTrue(entry['sender'] == 'system')
+        self.assertTrue(entry['msg'] == 'welcome')
+        self.assertTrue(entry['id'] == 0)
+        
+
 
 if __name__=='__main__':
     unittest.main()

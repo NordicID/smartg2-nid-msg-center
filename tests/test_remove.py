@@ -14,7 +14,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
     def setUp(self):
         ''' Setup unittest object '''
         self.setUpPyfakefs()
-        self.fs.create_file("/systemrw/dummy", contents="XXX")
+        self.fs.create_file("/systemrw/nid/dummy", contents="XXX")
         self.srv = MsgCenterServer()
 
     def _add_retval_ok(self, retval):
@@ -67,10 +67,10 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
             self.assertTrue(retval == {})
             # print("remove:", doc_id)
 
-        # should return an empty list
+        # should return a list with 1 entry
         msg_list = await self.srv.get({})
         self.assertTrue('data' in msg_list)
-        self.assertFalse(msg_list['data'])
+        self.assertTrue(len(msg_list['data']) == 1)
 
     async def test_remove_by_id(self):
         payload = {

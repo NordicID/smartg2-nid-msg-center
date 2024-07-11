@@ -3,6 +3,7 @@
 import time
 from enum import IntEnum
 from tinydb import TinyDB, Query
+import os.path
 
 # pylint: disable=C0115 (missing-class-docstring)
 # pylint: disable=C0116 (missing-function-docstring)
@@ -12,8 +13,17 @@ State = IntEnum('State', ['NEW', 'READ', 'REMOVED'])
 
 class MsgDatabase:
     def __init__(self):
-        msg_db = '/systemrw/msgcenter_db.json'
-        self.tinydb = TinyDB(msg_db)
+        dbPath = '/systemrw/nid/msgcenter_db.json'
+        dbExists = os.path.isfile(dbPath)
+        self.tinydb = TinyDB(dbPath)
+        if(dbExists == False):
+            payload = {
+                'level': 'reset',
+                'sender': 'system',
+                'id': 0,
+                'msg': 'welcome'
+            }
+            self.insert(payload)
 
     def insert(self, payload: dict) -> int:
         stamp = time.clock_gettime(0)
