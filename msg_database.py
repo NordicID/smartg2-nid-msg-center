@@ -22,7 +22,8 @@ class MsgDatabase:
                 'level': 'reset',
                 'sender': 'system',
                 'id': 0,
-                'msg': 'welcome'
+                'msg': 'welcome',
+                'permanent': True
             }
             self.insert(payload)
 
