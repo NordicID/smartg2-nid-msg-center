@@ -69,7 +69,6 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
 
         # should return an empty list
         msg_list = await self.srv.get(first)
-        print(msg_list)
         self.assertTrue('data' in msg_list)
         self.assertFalse(msg_list['data'])
 

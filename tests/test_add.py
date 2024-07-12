@@ -53,6 +53,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
             'level': 'info',
             'sender': 'unittest',
             'id': 777,
+
             'msg': 'testing: to get specific message'
         }
         retval = await self.srv.add(payload)
@@ -79,6 +80,58 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         self.assertTrue(entry['msg'] == 'welcome')
         self.assertTrue(entry['id'] == 0)
         self.assertTrue(entry['uuid'] != None)
+
+    async def test_creates_uuid(self):
+        payload = {
+            'level': 'info',
+            'sender': 'unittest',
+            'id': 777,
+            'msg': 'testing: to get specific message'
+        }
+
+        # Case 1: should create a new uuid as it is not in message
+        retval = await self.srv.add(payload)
+        self.assertTrue(self._add_retval_ok(retval))
+
+        msg_list = await self.srv.get(retval)
+        self.assertTrue('data' in msg_list)
+        self.assertTrue('uuid' in msg_list['data'][0])
+        self.assertTrue(msg_list['data'][0]['uuid'] == retval['uuid'])
+
+        # Case 2: should use provided uuid value
+        new_uuid = 42
+        payload.update({'uuid': new_uuid})
+        retval = await self.srv.add(payload)
+        self.assertTrue(self._add_retval_ok(retval))
+
+        msg_list = await self.srv.get(retval)
+        self.assertTrue('data' in msg_list)
+        self.assertTrue('uuid' in msg_list['data'][0])
+        self.assertTrue(msg_list['data'][0]['uuid'] == new_uuid)
+
+        # Case 3: should create a new uuid as it is empty
+        empty_uuid = ''
+        payload.update({'uuid': empty_uuid})
+        retval = await self.srv.add(payload)
+        self.assertTrue(self._add_retval_ok(retval))
+
+        msg_list = await self.srv.get(retval)
+        self.assertTrue('data' in msg_list)
+        self.assertTrue('uuid' in msg_list['data'][0])
+        self.assertTrue(msg_list['data'][0]['uuid'] != empty_uuid)
+        self.assertTrue(msg_list['data'][0]['uuid'] == retval['uuid'])
+
+        # Case 4: should create a new uuid as it is None
+        none_uuid = None
+        payload.update({'uuid': none_uuid})
+        retval = await self.srv.add(payload)
+        self.assertTrue(self._add_retval_ok(retval))
+
+        msg_list = await self.srv.get(retval)
+        self.assertTrue('data' in msg_list)
+        self.assertTrue('uuid' in msg_list['data'][0])
+        self.assertTrue(msg_list['data'][0]['uuid'] != none_uuid)
+        self.assertTrue(msg_list['data'][0]['uuid'] == retval['uuid'])
 
 
 if __name__=='__main__':

@@ -34,10 +34,11 @@ class MsgDatabase:
         stamp = time.clock_gettime(0)
         payload.update({'stamp': stamp})
         payload.update({'state': State.NEW})
-        uuid = self.__createUUID()
-        payload.update({'uuid': uuid})
+        if 'uuid' not in payload or not payload['uuid']:
+            uuid = self.__createUUID()
+            payload.update({'uuid': uuid})
         self.tinydb.insert(payload)
-        return uuid
+        return payload['uuid']
 
     def search(self, payload: dict) -> dict:
         msg = Query()

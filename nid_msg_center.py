@@ -114,12 +114,9 @@ class MsgCenterServer:
         messages:
         - description: Get all or specific notifications
           payload:
-            sender:
-              description: notification sender name
+            uuid:
+              description: universal unique identifier of the message
               type: string
-            id:
-              description: notification id set by sender
-              type: int
           responses:
           - title: List of notifications
             data: {}
@@ -133,17 +130,25 @@ class MsgCenterServer:
         else:
             for test in self.msg_db.all(None):
                 msg = test
-                #msg.update({'doc_id': test.doc_id})
                 msg_list.append(msg)
             retval = {'data': msg_list}
         return retval
 
     async def remove(self, payload: dict) -> dict:
-        self.msg_db.remove(payload)
+        retval = {}
+        if 'uuid' in payload:
+            self.msg_db.remove(payload)
+        else:
+            retval = {'error': 'uuid missing'}
+        return retval
 
     async def touch(self, payload: dict) -> dict:
+        retval = {}
         if 'uuid' in payload:
             self.msg_db.touch(payload)
+        else:
+            retval = {'error': 'uuid missing'}
+        return retval
 
     async def run(self) -> None:
         self._remove_volatile()
