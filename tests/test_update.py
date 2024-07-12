@@ -19,7 +19,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
 
     def _add_retval_ok(self, retval):
         ret = False
-        if 'doc_id' in retval:
+        if 'uuid' in retval:
             ret = True
         return ret
 
@@ -29,7 +29,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         payload = {'level': 'info', 'msg': old_msg, 'permanent': False}
         retval = await self.srv.add(payload)
         self.assertTrue(self._add_retval_ok(retval))
-        doc_id = retval['doc_id']
+        uuid = retval['uuid']
 
         msg_list = await self.srv.get({})
         self.assertTrue('data' in msg_list)
@@ -37,7 +37,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         entry = msg_list['data'][1]
         # print('OLD:', entry['msg'])
         self.assertTrue(entry['msg'] == old_msg)
-        payload.update({'doc_id': doc_id})
+        payload.update({'uuid': uuid})
         payload.update({'msg': new_msg})
         await self.srv.touch(payload)
 

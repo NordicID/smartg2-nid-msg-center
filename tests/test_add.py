@@ -19,7 +19,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
 
     def _add_retval_ok(self, retval):
         ret = False
-        if 'doc_id' in retval:
+        if 'uuid' in retval:
             ret = True
         return ret
 
@@ -45,10 +45,10 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
             self.assertTrue('sender' in msg)
             self.assertTrue('id' in msg)
             self.assertTrue('msg' in msg)
-            self.assertTrue('doc_id' in msg)
+            self.assertTrue('uuid' in msg)
             # print(msg['stamp'], msg['level'], msg['msg'])
 
-    async def test_get_id(self):
+    async def test_get_uuid(self):
         payload = {
             'level': 'info',
             'sender': 'unittest',
@@ -64,7 +64,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         self.assertTrue('msg' in msg_list['data'][0])
 
         # not nok case: should return an empty list
-        payload.update({'id': 677})
+        payload.update({'uuid': 677})
         msg_list = await self.srv.get(payload)
         self.assertTrue('data' in msg_list)
         self.assertFalse(msg_list['data'])
@@ -78,7 +78,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         self.assertTrue(entry['sender'] == 'system')
         self.assertTrue(entry['msg'] == 'welcome')
         self.assertTrue(entry['id'] == 0)
-        
+        self.assertTrue(entry['uuid'] != None)
 
 
 if __name__=='__main__':

@@ -63,7 +63,7 @@ class MsgCenterServer:
         # Remove volatile notifications
         for msg in self.msg_db.all(None):
             if 'permanent' not in msg or not msg['permanent']:
-                self.msg_db.remove_by_db_id(msg.doc_id, True)
+                self.msg_db.remove(msg, True)
                 # print('Remove volatile msg:', msg['msg'])
 
     async def conf_get(self, payload: dict) -> dict:
@@ -86,8 +86,8 @@ class MsgCenterServer:
           - title: List of notifications
             data: {}
         '''
-        doc_id = None
-        retval = {'doc_id': doc_id}
+
+        retval = {}
         if self._valid_level(payload):
             if 'permanent' not in payload:
                 payload.update({'permanent': False})
@@ -102,8 +102,8 @@ class MsgCenterServer:
             if self._spam_detect(payload):
                 retval = {'warning': 'spam detected'}
             else:
-                doc_id = self.msg_db.insert(payload)
-                retval.update({'doc_id': doc_id})
+                uuid = self.msg_db.insert(payload)
+                retval.update({'uuid': uuid})
         else:
             retval = {'error': 'not valid'}
         return retval
@@ -126,35 +126,24 @@ class MsgCenterServer:
         '''
         retval = {'error': 'syntax error'}
         msg_list = []
-
-        if 'sender' in payload and 'id' in payload:
-            for test in self.msg_db.get_id(payload):
+        if 'uuid' in payload:
+            for test in self.msg_db.get_uuid(payload):
                 msg_list.append(test)
             retval = {'data': msg_list}
         else:
             for test in self.msg_db.all(None):
                 msg = test
-                msg.update({'doc_id': test.doc_id})
+                #msg.update({'doc_id': test.doc_id})
                 msg_list.append(msg)
             retval = {'data': msg_list}
         return retval
 
     async def remove(self, payload: dict) -> dict:
-        retval = {}
-        if 'doc_id' in payload:
-            doc_id = payload['doc_id']
-            self.msg_db.remove_by_db_id(doc_id)
-        elif 'sender' in payload and 'id' in payload:
-            self.msg_db.remove_by_id(payload)
-        return retval
+        self.msg_db.remove(payload)
 
     async def touch(self, payload: dict) -> dict:
-        retval = {}
-        if 'doc_id' in payload:
+        if 'uuid' in payload:
             self.msg_db.touch(payload)
-        elif 'sender' in payload and 'id' in payload:
-            self.msg_db.touch(payload)
-        return retval
 
     async def run(self) -> None:
         self._remove_volatile()
