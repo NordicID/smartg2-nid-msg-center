@@ -16,7 +16,7 @@ class MsgDatabase:
         dbPath = '/systemrw/nid/msgcenter_db.json'
         dbExists = os.path.isfile(dbPath)
         self.tinydb = TinyDB(dbPath)
-        if(dbExists == False):
+        if dbExists == False:
             payload = {
                 'level': 'reset',
                 'sender': 'system',
