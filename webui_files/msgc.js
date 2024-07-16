@@ -1,19 +1,17 @@
-function removeSomeMessage(id)
+function removeSomeMessage(uuid)
 {
-	const doc_id = Number(id);
 	const api = '/api/builtin/msgcenter/remove';
-	fr22BackendPost(api, JSON.stringify({"doc_id": doc_id}))
+	fr22BackendPost(api, JSON.stringify({"uuid": uuid}))
 		.done(function() {
 			// fr22ShowToast('success', " completed");
 			setTimeout($("#msgCenterList").DataTable().ajax.reload, 200);
 		});
 }
 
-function touchSomeMessage(id)
+function touchSomeMessage(uuid)
 {
-	const doc_id = Number(id);
 	const api = '/api/builtin/msgcenter/update';
-	fr22BackendPost(api, JSON.stringify({"doc_id": doc_id}))
+	fr22BackendPost(api, JSON.stringify({"uuid": uuid}))
 		.done(function() {
 			// fr22ShowToast('success', " completed");
 			setTimeout($("#msgCenterList").DataTable().ajax.reload, 200);
@@ -35,10 +33,10 @@ function executeApiAction(api, params)
 function getActions(db)
 {
 	let line;
-	const id = db['doc_id'];
+	const uuid = db['uuid'];
 	const action = db['action'];
-	const on_remove = 'title="Remove" onclick=removeSomeMessage(' + id + ')';
-	const on_touch = 'title="Touch" onclick=touchSomeMessage(' + id + ')';
+	const on_remove = 'title="Remove" onclick=removeSomeMessage("' + uuid + '")';
+	const on_touch = 'title="Touch" onclick=touchSomeMessage("' + uuid + '")';
 	line = '<div class="appActions">';
 	line += '<i class="fas fa-trash-alt" ' + on_remove + '></i>';
 	if (action && action.api && action.params) {
@@ -57,18 +55,17 @@ function readAllMessages()
 	fr22BackendGet("/api/builtin/msgcenter/get")
 		.done(function(json) {
 			json["data"].forEach(i => {
-				touchSomeMessage(i["doc_id"]);
+				touchSomeMessage(i["uuid"]);
 			});
 		});
 }
 
 function clearAllMessages()
 {
-	console.log("Clearing");
 	fr22BackendGet("/api/builtin/msgcenter/get")
 	.done(function(json) {
 		json["data"].forEach(i => {
-			removeSomeMessage(i["doc_id"]);
+			removeSomeMessage(i["uuid"]);
 		});
 	});
 }
@@ -87,7 +84,6 @@ $(document).ready(function() {
 				return a;
 			}
 		},
-		rowId: 'doc_id',
 		columns: [
 			{ data: 'level', className: "text-right", render: function (data, type, row){
 					let icon = '';
