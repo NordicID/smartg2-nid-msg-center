@@ -138,6 +138,49 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         self.assertTrue(msg_list['data'][0]['uuid'] != none_uuid)
         self.assertTrue(msg_list['data'][0]['uuid'] == retval['uuid'])
 
+    async def test_upsert_data(self):
+        await self.srv.initDatabase(self.testDevName)
+        payload = {
+            'level': 'info',
+            'sender': 'unittest',
+            'id': 777,
+            'msg': 'testing: to get specific message'
+        }
+
+        # Case 1: should create a new uuid as it is not in message
+        retval = await self.srv.add(payload)
+        self.assertTrue(self._add_retval_ok(retval))
+
+        msg_list = await self.srv.get([])
+        self.assertTrue(msg_list['data'].__len__() == 2)
+
+        # Case 2: add same message again, list length does not change
+        retval = await self.srv.add(payload)
+        self.assertTrue(self._add_retval_ok(retval))
+
+        msg_list = await self.srv.get([])
+        self.assertTrue(msg_list['data'].__len__() == 2)
+
+        # Case 3: add new message (reset uuid), list length increments
+        payload['uuid'] = ''
+        retval = await self.srv.add(payload)
+        self.assertTrue(self._add_retval_ok(retval))
+
+        msg_list = await self.srv.get([])
+        self.assertTrue(msg_list['data'].__len__() == 3)
+
+        # Case 4: update message
+        curr_msg = await self.srv.get(payload)
+        payload['msg'] = 'Updated message!'
+        retval = await self.srv.add(payload)
+        self.assertTrue(self._add_retval_ok(retval))
+        upd_msg = await self.srv.get(payload)
+
+        msg_list = await self.srv.get([])
+        self.assertTrue(msg_list['data'].__len__() == 3)
+        self.assertTrue(curr_msg['data'][0]['msg'] != upd_msg['data'][0]['msg'])
+        self.assertTrue(curr_msg['data'][0]['uuid'] == upd_msg['data'][0]['uuid'])
+
 
 if __name__=='__main__':
     unittest.main()

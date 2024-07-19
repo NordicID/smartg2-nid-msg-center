@@ -5,7 +5,6 @@ from enum import IntEnum
 from tinydb import TinyDB, Query
 import os.path
 import uuid
-from nid_rpc import NidRpcClient
 
 # pylint: disable=C0115 (missing-class-docstring)
 # pylint: disable=C0116 (missing-function-docstring)
@@ -38,7 +37,8 @@ class MsgDatabase:
         if 'uuid' not in payload or not payload['uuid']:
             uuid = self.__createUUID()
             payload.update({'uuid': uuid})
-        self.tinydb.insert(payload)
+        msg = Query()
+        self.tinydb.upsert(payload, (msg.uuid == payload['uuid']))
         return payload['uuid']
 
     def search(self, payload: dict) -> dict:
