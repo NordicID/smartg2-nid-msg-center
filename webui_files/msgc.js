@@ -132,33 +132,5 @@ $(document).ready(function() {
 		fr22ShowToast('success', 'Message list cleared!');
 		setTimeout($("#msgCenterList").DataTable().ajax.reload, 200);
 	});
-
-	$("#sendTestMessage").click(function() {
-		let payload = {
-			'level': 'info',
-			'msg': $("#msgCenterTest").val()
-		};
-		fr22BackendPost('/api/builtin/msgcenter/add', JSON.stringify(payload))
-			.done(function() {
-				$('#msgCenterTest').trigger('reset');
-				fr22ShowToast('success', 'Message sent!!!');
-				setTimeout($("#msgCenterList").DataTable().ajax.reload, 200);
-			})
-	});
-
-	$("#sendPermanentMessage").click(function() {
-		let payload = {
-			'level': 'error',
-			'permanent': true,
-			'msg': $("#msgCenterPermanentTest").val()
-		};
-		fr22BackendPost('/api/builtin/msgcenter/add', JSON.stringify(payload))
-			.done(function() {
-				$('#msgCenterPermanentTest').trigger('reset');
-				fr22ShowToast('success', 'Message sent!!!');
-				setTimeout($("#msgCenterList").DataTable().ajax.reload, 200);
-			})
-	});
-
 	readAllMessages();
 });
