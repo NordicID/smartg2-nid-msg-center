@@ -19,6 +19,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         self.setUpPyfakefs()
         self.fs.create_file("/systemrw/nid/dummy", contents="XXX")
         self.srv = MsgCenterServer()
+        self.testDevName = 'Test-Device'
 
     def _add_retval_ok(self, retval):
         ret = False
@@ -27,6 +28,8 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         return ret
 
     async def test_update_msg_by_uuid(self):
+        await self.srv.initDatabase(self.testDevName)
+
         old_msg = 'this is old message, please forget'
         new_msg = 'this is shiny new message, use this'
         payload = {
@@ -55,6 +58,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         self.assertTrue(entry['msg'] == new_msg)
 
     async def test_should_add_and_read_message(self):
+        await self.srv.initDatabase(self.testDevName)
         payload = {
             'level': 'info',
             'sender': 'unittest',

@@ -15,6 +15,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         ''' Setup unittest object '''
         self.setUpPyfakefs()
         self.fs.create_file("/systemrw/nid/dummy", contents="XXX")
+        self.testDevName = "TestDevice"
         self.srv = MsgCenterServer()
 
     def _add_retval_ok(self, retval):
@@ -24,6 +25,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         return ret
 
     async def test_get_all(self):
+        await self.srv.initDatabase(self.testDevName)
         payload = {
             'level': 'info',
             'sender': 'unittest',
@@ -49,6 +51,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
             # print(msg['stamp'], msg['level'], msg['msg'])
 
     async def test_get_uuid(self):
+        await self.srv.initDatabase(self.testDevName)
         payload = {
             'level': 'info',
             'sender': 'unittest',
@@ -71,17 +74,19 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         self.assertFalse(msg_list['data'])
 
     async def test_welcome_message_created(self):
+        await self.srv.initDatabase(self.testDevName)
         msg_list = await self.srv.get([])
         self.assertTrue('data' in msg_list)
         self.assertTrue('msg' in msg_list['data'][0])
         entry = msg_list['data'][0]
         self.assertTrue(entry['level'] == 'reset')
         self.assertTrue(entry['sender'] == 'system')
-        self.assertTrue(entry['msg'] == 'welcome')
+        self.assertTrue(self.testDevName in entry['msg'])
         self.assertTrue(entry['id'] == 0)
         self.assertTrue(entry['uuid'] != None)
 
     async def test_creates_uuid(self):
+        await self.srv.initDatabase(self.testDevName)
         payload = {
             'level': 'info',
             'sender': 'unittest',

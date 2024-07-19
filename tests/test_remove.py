@@ -16,6 +16,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         self.setUpPyfakefs()
         self.fs.create_file("/systemrw/nid/dummy", contents="XXX")
         self.srv = MsgCenterServer()
+        self.testDevName = 'Test-Device'
 
     def _add_retval_ok(self, retval):
         ret = False
@@ -24,6 +25,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         return ret
 
     async def test_remove_volatile(self):
+        await self.srv.initDatabase(self.testDevName)
         payload = {'level': 'warning',
                    'msg': 'just testing',
                    'permanent': False}
@@ -49,6 +51,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
             self.assertTrue(msg['permanent'])
 
     async def test_remove(self):
+        await self.srv.initDatabase(self.testDevName)
         payload = {
             'level': 'info',
             'sender': 'unittest',

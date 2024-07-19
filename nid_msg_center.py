@@ -32,8 +32,19 @@ class MsgCenterServer:
         self.rpc.add_callback('/update', self.touch)
         self.rpc.freeze_api("1")
 
-        self.msg_db = MsgDatabase()
         self.stop_event = asyncio.Event()
+
+    async def initDatabase(self, devName=None):
+        if not devName:
+            devName = await self._getDeviceName()
+        self.msg_db = MsgDatabase(devName)
+
+    async def _getDeviceName(self) -> str:
+        devName = ''
+        res = await self.rpc.call('api/builtin/settings/persistent/get', {})
+        if 'nid-device-name' in res:
+            devName = res['nid-device-name']
+        return devName
 
     def _valid_level(self, payload: dict) -> bool:
         valid = False
@@ -151,9 +162,10 @@ class MsgCenterServer:
         return retval
 
     async def run(self) -> None:
-        self._remove_volatile()
         await self.rpc.connect()
         self.rpc.signal_startup_complete()
+        await self.initDatabase()
+        self._remove_volatile()
         await self.stop_event.wait()
 
 def main() -> None:

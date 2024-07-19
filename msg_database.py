@@ -5,6 +5,7 @@ from enum import IntEnum
 from tinydb import TinyDB, Query
 import os.path
 import uuid
+from nid_rpc import NidRpcClient
 
 # pylint: disable=C0115 (missing-class-docstring)
 # pylint: disable=C0116 (missing-function-docstring)
@@ -13,7 +14,7 @@ import uuid
 State = IntEnum('State', ['NEW', 'READ', 'REMOVED'])
 
 class MsgDatabase:
-    def __init__(self):
+    def __init__(self, deviceName: str):
         dbPath = '/systemrw/nid/msgcenter_db.json'
         dbExists = os.path.isfile(dbPath)
         self.tinydb = TinyDB(dbPath)
@@ -22,14 +23,13 @@ class MsgDatabase:
                 'level': 'reset',
                 'sender': 'system',
                 'id': 0,
-                'msg': 'welcome',
+                'msg': 'Welcome to ' + deviceName + '!',
                 'permanent': True
             }
             self.insert(payload)
 
     def __createUUID(self) -> str:
         return uuid.uuid4().hex
-
 
     def insert(self, payload: dict) -> int:
         stamp = time.clock_gettime(0)
