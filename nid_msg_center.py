@@ -40,10 +40,14 @@ class MsgCenterServer:
         self.msg_db = MsgDatabase(devName)
 
     async def _getDeviceName(self) -> str:
+        timeout = 10
         devName = ''
-        res = await self.rpc.call('api/builtin/settings/persistent/get', {})
-        if 'nid-device-name' in res:
-            devName = res['nid-device-name']
+        while(timeout):
+            res = await self.rpc.call('api/builtin/settings/persistent/get', {})
+            if 'nid-device-name' in res:
+                devName = res['nid-device-name']
+            await asyncio.sleep(1)
+            timeout -= 1
         return devName
 
     def _valid_level(self, payload: dict) -> bool:
@@ -134,15 +138,18 @@ class MsgCenterServer:
         '''
         retval = {'error': 'syntax error'}
         msg_list = []
-        if 'uuid' in payload:
-            for test in self.msg_db.get_uuid(payload):
-                msg_list.append(test)
-            retval = {'data': msg_list}
-        else:
-            for test in self.msg_db.all(None):
-                msg = test
-                msg_list.append(msg)
-            retval = {'data': msg_list}
+        try:
+            if 'uuid' in payload:
+                for test in self.msg_db.get_uuid(payload):
+                    msg_list.append(test)
+                retval = {'data': msg_list}
+            else:
+                for test in self.msg_db.all(None):
+                    msg = test
+                    msg_list.append(msg)
+                retval = {'data': msg_list}
+        except AttributeError:
+            retval = {'error': 'message database not initialized'}
         return retval
 
     async def remove(self, payload: dict) -> dict:
@@ -163,8 +170,8 @@ class MsgCenterServer:
 
     async def run(self) -> None:
         await self.rpc.connect()
-        self.rpc.signal_startup_complete()
         await self.initDatabase()
+        self.rpc.signal_startup_complete()
         self._remove_volatile()
         await self.stop_event.wait()
 

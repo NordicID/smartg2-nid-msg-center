@@ -63,11 +63,11 @@ function readAllMessages()
 function clearAllMessages()
 {
 	fr22BackendGet("/api/builtin/msgcenter/get")
-	.done(function(json) {
-		json["data"].forEach(i => {
-			removeSomeMessage(i["uuid"]);
+		.done(function(json) {
+			json["data"].forEach(i => {
+				removeSomeMessage(i["uuid"]);
+			});
 		});
-	});
 }
 
 $(document).ready(function() {
