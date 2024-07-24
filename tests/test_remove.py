@@ -25,7 +25,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         return ret
 
     async def test_remove_volatile(self):
-        await self.srv.initDatabase(self.testDevName)
+        await self.srv.init_database(self.testDevName)
         payload = {'level': 'warning',
                    'msg': 'just testing',
                    'permanent': False}
@@ -51,7 +51,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
             self.assertTrue(msg['permanent'])
 
     async def test_remove(self):
-        await self.srv.initDatabase(self.testDevName)
+        await self.srv.init_database(self.testDevName)
         payload = {
             'level': 'info',
             'sender': 'unittest',
@@ -74,6 +74,39 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         msg_list = await self.srv.get(first)
         self.assertTrue('data' in msg_list)
         self.assertFalse(msg_list['data'])
+
+    async def test_remove_many(self):
+        await self.srv.init_database(self.testDevName)
+        payload = {
+            'level': 'info',
+            'sender': 'unittest',
+            'id': 777,
+            'msg': 'testing: to remove specific message'
+        }
+
+        uuids = { 'uuids':[] }
+
+        messageCount = 10
+
+        # add message x times
+        for i in range(messageCount):
+            msg = await self.srv.add(payload)
+            self.assertTrue(self._add_retval_ok(msg))
+            uuids['uuids'].append(msg['uuid'])
+            payload['uuid'] = ''
+        
+        self.assertTrue(len(uuids['uuids']) == messageCount)
+        msg_list = await self.srv.get({})
+        self.assertTrue('data' in msg_list)
+        # List should have x messages plus welcome message
+        self.assertTrue(len(msg_list['data']) == messageCount + 1)
+
+        # Should remove all messages
+        await self.srv.remove(uuids)
+        msg_list = await self.srv.get({})
+        self.assertTrue('data' in msg_list)
+        # List should have only welcome message left
+        self.assertTrue(len(msg_list['data']) == 1)
 
 
 if __name__=='__main__':

@@ -23,7 +23,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         with patch.object(NidRpcClient, 'call',
                           side_effect=self.mock_rpc_call) as mock_method:
             testObj = MsgCenterServer()
-            await testObj.initDatabase()
+            await testObj.init_database()
             self.assertTrue(self.check_call_args('api/builtin/settings/persistent/get', mock_method.call_args_list))
             msg_list = await testObj.get([])
             entry = msg_list['data'][0]

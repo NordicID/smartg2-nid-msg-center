@@ -10,7 +10,7 @@ import uuid
 # pylint: disable=C0116 (missing-function-docstring)
 # pylint: disable=W0613 (unused-argument)
 
-State = IntEnum('State', ['NEW', 'READ', 'REMOVED'])
+State = IntEnum('State', ['NEW', 'READ'])
 
 class MsgDatabase:
     def __init__(self, deviceName: str):
@@ -21,13 +21,13 @@ class MsgDatabase:
             payload = {
                 'level': 'reset',
                 'sender': 'system',
-                'id': 0,
                 'msg': 'Welcome to ' + deviceName + '!',
-                'permanent': True
+                'permanent': True,
+                'uuid': 'welcome'
             }
             self.insert(payload)
 
-    def __createUUID(self) -> str:
+    def _create_uuid(self) -> str:
         return uuid.uuid4().hex
 
     def insert(self, payload: dict) -> int:
@@ -35,33 +35,24 @@ class MsgDatabase:
         payload.update({'stamp': stamp})
         payload.update({'state': State.NEW})
         if 'uuid' not in payload or not payload['uuid']:
-            uuid = self.__createUUID()
+            uuid = self._create_uuid()
             payload.update({'uuid': uuid})
         msg = Query()
         self.tinydb.upsert(payload, (msg.uuid == payload['uuid']))
         return payload['uuid']
-
+    
     def search(self, payload: dict) -> dict:
         msg = Query()
-        query = (msg.level == payload['level']) \
-            & (msg.state != State.REMOVED)
-        return self.tinydb.search(query)
-
-    def get_id(self, payload: dict) -> dict:
-        msg = Query()
-        query = (msg.id == payload['id']) \
-            & (msg.sender == payload['sender']) \
-            & (msg.state != State.REMOVED)
-        return self.tinydb.search(query)
-    
-    def get_uuid(self, payload: dict) -> dict:
-        msg = Query()
-        query = (msg.uuid == payload['uuid'])
+        
+        if 'uuid' in payload:
+            query = (msg.uuid == payload['uuid'])
+        elif 'sender' in payload:
+            query = (msg.sender == payload['sender'])
+        
         return self.tinydb.search(query)
 
     def all(self, payload: dict) -> dict:
-        msg = Query()
-        return self.tinydb.search(msg.state != State.REMOVED)
+        return self.tinydb.all()
 
     def remove(self, payload: dict, force=False) -> None:
         msg = Query()

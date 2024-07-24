@@ -28,7 +28,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         return ret
 
     async def test_update_msg_by_uuid(self):
-        await self.srv.initDatabase(self.testDevName)
+        await self.srv.init_database(self.testDevName)
 
         old_msg = 'this is old message, please forget'
         new_msg = 'this is shiny new message, use this'
@@ -58,7 +58,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         self.assertTrue(entry['msg'] == new_msg)
 
     async def test_should_add_and_read_message(self):
-        await self.srv.initDatabase(self.testDevName)
+        await self.srv.init_database(self.testDevName)
         payload = {
             'level': 'info',
             'sender': 'unittest',
@@ -90,6 +90,48 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         # State should be updated to read after touch
         msg = await self.srv.get(uuid)
         self.assertTrue(msg['data'][0]['state'] == State.READ)
+
+    async def test_should_add_and_read_many_messages(self):
+        await self.srv.init_database(self.testDevName)
+        payload = {
+            'level': 'info',
+            'sender': 'unittest',
+            'id': 555,
+            'msg': 'just testing'
+        }
+
+        uuids = { 'uuids':[ 'welcome' ] }
+
+        messageCount = 10
+
+        # add message x times
+        for i in range(messageCount):
+            msg = await self.srv.add(payload)
+            self.assertTrue(self._add_retval_ok(msg))
+            uuids['uuids'].append(msg['uuid'])
+            payload['uuid'] = ''
+
+        # List should have x message uuids plus welcome message uuid
+        self.assertTrue(len(uuids['uuids']) == messageCount + 1)
+        msg_list = await self.srv.get({})
+        self.assertTrue('data' in msg_list)
+        self.assertTrue(len(msg_list['data']) == messageCount + 1)
+
+        print(msg_list)
+
+        for msg in msg_list['data']:
+            self.assertTrue(msg['state'] == State.NEW)
+
+        await self.srv.touch(uuids)
+
+        msg_list = await self.srv.get({})
+        self.assertTrue('data' in msg_list)
+
+        print(msg_list)
+
+        # State should be updated to read after touch
+        for msg in msg_list['data']:
+            self.assertTrue(msg['state'] == State.READ)
 
 if __name__=='__main__':
     unittest.main()

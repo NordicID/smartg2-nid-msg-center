@@ -25,7 +25,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         return ret
 
     async def test_get_all(self):
-        await self.srv.initDatabase(self.testDevName)
+        await self.srv.init_database(self.testDevName)
         payload = {
             'level': 'info',
             'sender': 'unittest',
@@ -45,13 +45,12 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
             self.assertTrue('stamp' in msg)
             self.assertTrue('level' in msg)
             self.assertTrue('sender' in msg)
-            self.assertTrue('id' in msg)
             self.assertTrue('msg' in msg)
             self.assertTrue('uuid' in msg)
             # print(msg['stamp'], msg['level'], msg['msg'])
 
     async def test_get_uuid(self):
-        await self.srv.initDatabase(self.testDevName)
+        await self.srv.init_database(self.testDevName)
         payload = {
             'level': 'info',
             'sender': 'unittest',
@@ -74,7 +73,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         self.assertFalse(msg_list['data'])
 
     async def test_welcome_message_created(self):
-        await self.srv.initDatabase(self.testDevName)
+        await self.srv.init_database(self.testDevName)
         msg_list = await self.srv.get([])
         self.assertTrue('data' in msg_list)
         self.assertTrue('msg' in msg_list['data'][0])
@@ -82,11 +81,10 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         self.assertTrue(entry['level'] == 'reset')
         self.assertTrue(entry['sender'] == 'system')
         self.assertTrue(self.testDevName in entry['msg'])
-        self.assertTrue(entry['id'] == 0)
         self.assertTrue(entry['uuid'] != None)
 
     async def test_creates_uuid(self):
-        await self.srv.initDatabase(self.testDevName)
+        await self.srv.init_database(self.testDevName)
         payload = {
             'level': 'info',
             'sender': 'unittest',
@@ -139,7 +137,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         self.assertTrue(msg_list['data'][0]['uuid'] == retval['uuid'])
 
     async def test_upsert_data(self):
-        await self.srv.initDatabase(self.testDevName)
+        await self.srv.init_database(self.testDevName)
         payload = {
             'level': 'info',
             'sender': 'unittest',
@@ -180,6 +178,35 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         self.assertTrue(msg_list['data'].__len__() == 3)
         self.assertTrue(curr_msg['data'][0]['msg'] != upd_msg['data'][0]['msg'])
         self.assertTrue(curr_msg['data'][0]['uuid'] == upd_msg['data'][0]['uuid'])
+
+    async def test_get_all_by_sender(self):
+        await self.srv.init_database(self.testDevName)
+        payload = {
+            'level': 'info',
+            'sender': 'unittest',
+            'id': 555,
+            'msg': 'just testing'
+        }
+
+        messageCount = 100
+
+        # add some messages
+        for _ in range(messageCount):
+            retval = await self.srv.add(payload)
+            self.assertTrue(self._add_retval_ok(retval))
+            payload['uuid'] = ''
+
+        # try to read the list with sender that does not exist
+        msg_list = await self.srv.get({'sender':'this sender is not real'})
+        self.assertTrue('data' in msg_list)
+        self.assertTrue(len(msg_list['data']) == 0)
+
+        # try to read the list with the correct sender
+        msg_list = await self.srv.get({'sender':'unittest'})
+        self.assertTrue('data' in msg_list)
+        print(msg_list)
+        self.assertTrue(len(msg_list['data']) == messageCount)
+        
 
 
 if __name__=='__main__':

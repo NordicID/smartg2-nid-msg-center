@@ -20,10 +20,12 @@ class MsgCenterServer:
             path = os.path.abspath('webui_files')
         else:
             path = '/usr/lib/nid-web-api-backend-plugins/msgcenter'
+        pages = ('msgcenter', 'index.html', '/System/Notifications[fa-envelope]')
 
         self.rpc = nid_rpc.NidRpcPlugin('builtin',
                                         'msgcenter',
-                                        path)
+                                        path, 
+                                        pages=pages)
 
         self.rpc.add_callback('/conf/get', self.conf_get)
         self.rpc.add_callback('/add', self.add)
@@ -34,13 +36,12 @@ class MsgCenterServer:
 
         self.stop_event = asyncio.Event()
 
-    async def initDatabase(self, devName=None):
+    async def init_database(self, devName=None):
         if not devName:
-            devName = await self._getDeviceName()
+            devName = await self._get_device_name()
         self.msg_db = MsgDatabase(devName)
 
-    async def _getDeviceName(self) -> str:
-        timeout = 10
+    async def _get_device_name(self, timeout=10) -> str:
         devName = ''
         while(timeout):
             res = await self.rpc.call('api/builtin/settings/persistent/get', {})
@@ -64,15 +65,6 @@ class MsgCenterServer:
             else:
                 valid = False
         return valid
-
-    def _spam_detect(self, payload: dict) -> bool:
-        spam = False
-        spam_count = 0
-        for _ in self.msg_db.get_id(payload):
-            spam_count += 1
-        if spam_count > 40:
-            spam = True
-        return spam
 
     def _remove_volatile(self) -> None:
         # Remove volatile notifications
@@ -113,12 +105,8 @@ class MsgCenterServer:
             if 'action' not in payload:
                 payload.update({'action': {'api': None, 'params': None}})
 
-            # SPAM filter: here:
-            if self._spam_detect(payload):
-                retval = {'warning': 'spam detected'}
-            else:
-                uuid = self.msg_db.insert(payload)
-                retval.update({'uuid': uuid})
+            uuid = self.msg_db.insert(payload)
+            retval.update({'uuid': uuid})
         else:
             retval = {'error': 'not valid'}
         return retval
@@ -132,6 +120,9 @@ class MsgCenterServer:
             uuid:
               description: universal unique identifier of the message
               type: string
+            sender:
+              description: sender name
+              type: string
           responses:
           - title: List of notifications
             data: {}
@@ -139,8 +130,8 @@ class MsgCenterServer:
         retval = {'error': 'syntax error'}
         msg_list = []
         try:
-            if 'uuid' in payload:
-                for test in self.msg_db.get_uuid(payload):
+            if 'uuid' in payload or 'sender' in payload:
+                for test in self.msg_db.search(payload):
                     msg_list.append(test)
                 retval = {'data': msg_list}
             else:
@@ -156,6 +147,9 @@ class MsgCenterServer:
         retval = {}
         if 'uuid' in payload:
             self.msg_db.remove(payload)
+        elif 'uuids' in payload:
+            for item in payload['uuids']:
+                self.msg_db.remove({'uuid': item})
         else:
             retval = {'error': 'uuid missing'}
         return retval
@@ -164,13 +158,16 @@ class MsgCenterServer:
         retval = {}
         if 'uuid' in payload:
             self.msg_db.touch(payload)
+        elif 'uuids' in payload:
+            for item in payload['uuids']:
+                self.msg_db.touch({'uuid': item})
         else:
             retval = {'error': 'uuid missing'}
         return retval
 
     async def run(self) -> None:
         await self.rpc.connect()
-        await self.initDatabase()
+        await self.init_database()
         self.rpc.signal_startup_complete()
         self._remove_volatile()
         await self.stop_event.wait()
