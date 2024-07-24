@@ -14,16 +14,18 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
     def setUp(self):
         ''' Setup unittest object '''
         self.setUpPyfakefs()
-        self.fs.create_file("/systemrw/dummy", contents="XXX")
+        self.fs.create_file("/systemrw/nid/dummy", contents="XXX")
         self.srv = MsgCenterServer()
+        self.testDevName = 'Test-Device'
 
     def _add_retval_ok(self, retval):
         ret = False
-        if 'doc_id' in retval:
+        if 'uuid' in retval:
             ret = True
         return ret
 
     async def test_remove_volatile(self):
+        await self.srv.init_database(self.testDevName)
         payload = {'level': 'warning',
                    'msg': 'just testing',
                    'permanent': False}
@@ -48,31 +50,8 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         for msg in msg_list['data']:
             self.assertTrue(msg['permanent'])
 
-    async def test_remove_by_db_id(self):
-        payload = {'level': 'warning', 'msg': 'just testing: remove'}
-        new_list = []
-
-        # add a couple of messages, save doc_ids into list
-        for _ in range(10):
-            retval = await self.srv.add(payload)
-            self.assertTrue(self._add_retval_ok(retval))
-            new_list.append(retval['doc_id'])
-            # print("add:", retval['doc_id'])
-
-        # remove massages using listed doc_ids
-        payload = {'doc_id': None}
-        for doc_id in new_list:
-            payload['doc_id'] = doc_id
-            retval = await self.srv.remove(payload)
-            self.assertTrue(retval == {})
-            # print("remove:", doc_id)
-
-        # should return an empty list
-        msg_list = await self.srv.get({})
-        self.assertTrue('data' in msg_list)
-        self.assertFalse(msg_list['data'])
-
-    async def test_remove_by_id(self):
+    async def test_remove(self):
+        await self.srv.init_database(self.testDevName)
         payload = {
             'level': 'info',
             'sender': 'unittest',
@@ -81,19 +60,54 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
         }
 
         # add message two time (should remove both)
-        retval = await self.srv.add(payload)
-        self.assertTrue(self._add_retval_ok(retval))
-        retval = await self.srv.add(payload)
-        self.assertTrue(self._add_retval_ok(retval))
+        first = await self.srv.add(payload)
+        self.assertTrue(self._add_retval_ok(first))
+        
+        second = await self.srv.add(payload)
+        self.assertTrue(self._add_retval_ok(second))
 
         # remove my messages from the database
-        retval = await self.srv.remove(payload)
-        self.assertTrue(retval == {})
+        await self.srv.remove(first)
+        await self.srv.remove(second)
 
         # should return an empty list
-        msg_list = await self.srv.get(payload)
+        msg_list = await self.srv.get(first)
         self.assertTrue('data' in msg_list)
         self.assertFalse(msg_list['data'])
+
+    async def test_remove_many(self):
+        await self.srv.init_database(self.testDevName)
+        payload = {
+            'level': 'info',
+            'sender': 'unittest',
+            'id': 777,
+            'msg': 'testing: to remove specific message'
+        }
+
+        uuids = { 'uuids':[] }
+
+        messageCount = 10
+
+        # add message x times
+        for i in range(messageCount):
+            msg = await self.srv.add(payload)
+            self.assertTrue(self._add_retval_ok(msg))
+            uuids['uuids'].append(msg['uuid'])
+            payload['uuid'] = ''
+        
+        self.assertTrue(len(uuids['uuids']) == messageCount)
+        msg_list = await self.srv.get({})
+        self.assertTrue('data' in msg_list)
+        # List should have x messages plus welcome message
+        self.assertTrue(len(msg_list['data']) == messageCount + 1)
+
+        # Should remove all messages
+        await self.srv.remove(uuids)
+        msg_list = await self.srv.get({})
+        self.assertTrue('data' in msg_list)
+        # List should have only welcome message left
+        self.assertTrue(len(msg_list['data']) == 1)
+
 
 if __name__=='__main__':
     unittest.main()

@@ -1,19 +1,17 @@
-function removeSomeMessage(id)
+function removeSomeMessage(uuids)
 {
-	const doc_id = Number(id);
-	const api = '/api/builtin/msgcenter/remove';
-	fr22BackendPost(api, JSON.stringify({"doc_id": doc_id}))
+	param = JSON.stringify({"uuids": uuids})
+	fr22BackendPost('/api/builtin/msgcenter/remove', JSON.stringify(param))
 		.done(function() {
 			// fr22ShowToast('success', " completed");
 			setTimeout($("#msgCenterList").DataTable().ajax.reload, 200);
 		});
 }
 
-function touchSomeMessage(id)
+function touchAllMessages(uuids)
 {
-	const doc_id = Number(id);
-	const api = '/api/builtin/msgcenter/update';
-	fr22BackendPost(api, JSON.stringify({"doc_id": doc_id}))
+	let param = JSON.stringify({'uuids': uuids});
+	fr22BackendPost('/api/builtin/msgcenter/update', param)
 		.done(function() {
 			// fr22ShowToast('success', " completed");
 			setTimeout($("#msgCenterList").DataTable().ajax.reload, 200);
@@ -35,13 +33,11 @@ function executeApiAction(api, params)
 function getActions(db)
 {
 	let line;
-	const id = db['doc_id'];
+	const uuid = db['uuid'];
 	const action = db['action'];
-	const on_remove = 'title="Remove" onclick=removeSomeMessage(' + id + ')';
-	const on_touch = 'title="Touch" onclick=touchSomeMessage(' + id + ')';
+	const on_remove = 'title="Remove" onclick=removeSomeMessage(["' + uuid + '"])';
 	line = '<div class="appActions">';
 	line += '<i class="fas fa-trash-alt" ' + on_remove + '></i>';
-	line += '<i class="fas fa-info-circle text-info" ' + on_touch + '></i>';
 	if (action && action.api && action.params) {
 		const api = '"' + action.api.toString() + '"';
 		const params = '"' + action.params.toString() + '"';
@@ -51,6 +47,30 @@ function getActions(db)
 	}
 	line += '</div>';
 	return line;
+}
+
+function readAllMessages()
+{
+	fr22BackendGet("/api/builtin/msgcenter/get")
+		.done(function(json) {
+			let data = [];
+			json["data"].forEach(i => {
+				data.push(i["uuid"]);
+			});
+			touchAllMessages(data);
+		});
+}
+
+function clearAllMessages()
+{
+	fr22BackendGet("/api/builtin/msgcenter/get")
+		.done(function(json) {
+			let data = [];
+			json["data"].forEach(i => {
+				data.push(i["uuid"]);
+			});
+			removeSomeMessage(data);
+		});
 }
 
 $(document).ready(function() {
@@ -67,8 +87,18 @@ $(document).ready(function() {
 				return a;
 			}
 		},
-		rowId: 'doc_id',
 		columns: [
+			{ data: 'level', className: "text-right", render: function (data, type, row){
+					let icon = '';
+					if(data === 'warning'){
+						icon = '-circle';
+					}
+					else if(data === 'error'){
+						icon = '-triangle';
+					}
+					return '<i class="fas fa-exclamation'+ icon +'"></i>';
+				} 
+			},
 			{ data: 'stamp', render:
 				function (data, type, row) {
 					const date = new Date(Number(data) * 1000);
@@ -76,7 +106,6 @@ $(document).ready(function() {
 					return stamp;
 				}
 			},
-			{ data: 'level', className: "text-right" },
 			{ data: 'msg', render:
 				function (data, type, row) {
 					let msg = data
@@ -92,37 +121,19 @@ $(document).ready(function() {
 			{ "width": "10%", "targets": 0 },
 			{ "width": "3%", "targets": 1 },
 			{ "width": "3%", "targets": 3 },
+			{ "type": "date-eu", "targets": 1 }
 		],
-		paging: false,
-		ordering: false,
+		order: [1, 'desc'],
+		paging: true,
+		ordering: true,
 		searching: false,
 		info: false
 	});
 
-	$("#sendTestMessage").click(function() {
-		let payload = {
-			'level': 'info',
-			'msg': $("#msgCenterTest").val()
-		};
-		fr22BackendPost('/api/builtin/msgcenter/add', JSON.stringify(payload))
-			.done(function() {
-				$('#msgCenterTest').trigger('reset');
-				fr22ShowToast('success', 'Message sent!!!');
-				setTimeout($("#msgCenterList").DataTable().ajax.reload, 200);
-			})
+	$("#clearMessages").click(function () {
+		clearAllMessages();
+		fr22ShowToast('success', 'Message list cleared!');
+		setTimeout($("#msgCenterList").DataTable().ajax.reload, 200);
 	});
-
-	$("#sendPermanentMessage").click(function() {
-		let payload = {
-			'level': 'error',
-			'permanent': true,
-			'msg': $("#msgCenterPermanentTest").val()
-		};
-		fr22BackendPost('/api/builtin/msgcenter/add', JSON.stringify(payload))
-			.done(function() {
-				$('#msgCenterPermanentTest').trigger('reset');
-				fr22ShowToast('success', 'Message sent!!!');
-				setTimeout($("#msgCenterList").DataTable().ajax.reload, 200);
-			})
-	});
+	readAllMessages();
 });
