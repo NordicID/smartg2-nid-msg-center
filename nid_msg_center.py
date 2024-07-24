@@ -68,7 +68,7 @@ class MsgCenterServer:
 
     def _remove_volatile(self) -> None:
         # Remove volatile notifications
-        for msg in self.msg_db.all(None):
+        for msg in self.msg_db.all():
             if 'permanent' not in msg or not msg['permanent']:
                 self.msg_db.remove(msg, True)
                 # print('Remove volatile msg:', msg['msg'])
@@ -135,7 +135,7 @@ class MsgCenterServer:
                     msg_list.append(test)
                 retval = {'data': msg_list}
             else:
-                for test in self.msg_db.all(None):
+                for test in self.msg_db.all():
                     msg = test
                     msg_list.append(msg)
                 retval = {'data': msg_list}

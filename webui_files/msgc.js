@@ -1,7 +1,7 @@
-function removeSomeMessage(uuid)
+function removeSomeMessage(uuids)
 {
-	const api = '/api/builtin/msgcenter/remove';
-	fr22BackendPost(api, JSON.stringify({"uuid": uuid}))
+	param = JSON.stringify({"uuids": uuids})
+	fr22BackendPost('/api/builtin/msgcenter/remove', JSON.stringify(param))
 		.done(function() {
 			// fr22ShowToast('success', " completed");
 			setTimeout($("#msgCenterList").DataTable().ajax.reload, 200);
@@ -10,9 +10,8 @@ function removeSomeMessage(uuid)
 
 function touchAllMessages(uuids)
 {
-	const api = '/api/builtin/msgcenter/update';
 	let param = JSON.stringify({'uuids': uuids});
-	fr22BackendPost(api, param)
+	fr22BackendPost('/api/builtin/msgcenter/update', param)
 		.done(function() {
 			// fr22ShowToast('success', " completed");
 			setTimeout($("#msgCenterList").DataTable().ajax.reload, 200);
@@ -36,7 +35,7 @@ function getActions(db)
 	let line;
 	const uuid = db['uuid'];
 	const action = db['action'];
-	const on_remove = 'title="Remove" onclick=removeSomeMessage("' + uuid + '")';
+	const on_remove = 'title="Remove" onclick=removeSomeMessage(["' + uuid + '"])';
 	line = '<div class="appActions">';
 	line += '<i class="fas fa-trash-alt" ' + on_remove + '></i>';
 	if (action && action.api && action.params) {
@@ -54,11 +53,11 @@ function readAllMessages()
 {
 	fr22BackendGet("/api/builtin/msgcenter/get")
 		.done(function(json) {
-			let data = { 'uuids':[] };
+			let data = [];
 			json["data"].forEach(i => {
-				arr['uuids'].push(i["uuid"]);
-				touchAllMessages(data);
+				data.push(i["uuid"]);
 			});
+			touchAllMessages(data);
 		});
 }
 
@@ -66,9 +65,11 @@ function clearAllMessages()
 {
 	fr22BackendGet("/api/builtin/msgcenter/get")
 		.done(function(json) {
+			let data = [];
 			json["data"].forEach(i => {
-				removeSomeMessage(i["uuid"]);
+				data.push(i["uuid"]);
 			});
+			removeSomeMessage(data);
 		});
 }
 

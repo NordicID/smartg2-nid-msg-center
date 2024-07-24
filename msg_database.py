@@ -51,7 +51,7 @@ class MsgDatabase:
         
         return self.tinydb.search(query)
 
-    def all(self, payload: dict) -> dict:
+    def all(self) -> dict:
         return self.tinydb.all()
 
     def remove(self, payload: dict, force=False) -> None:
