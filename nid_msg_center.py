@@ -7,6 +7,7 @@ import logging
 import os
 import nid_rpc
 
+from asyncio import TimeoutError
 from msg_database import MsgDatabase
 
 # pylint: disable=C0115 (missing-class-docstring)
@@ -33,13 +34,17 @@ class MsgCenterServer:
         self.rpc.add_callback('/remove', self.remove)
         self.rpc.add_callback('/update', self.touch)
         self.rpc.freeze_api("1")
-
+        self.state_changed = asyncio.Event()
         self.stop_event = asyncio.Event()
+
+    def _on_database_changed(self):
+        self.state_changed.set()
 
     async def init_database(self, devName=None):
         if not devName:
             devName = await self._get_device_name()
         self.msg_db = MsgDatabase(devName)
+        self.msg_db.register_callback(self._on_database_changed)
 
     async def _get_device_name(self, timeout=10) -> str:
         devName = ''
@@ -127,6 +132,15 @@ class MsgCenterServer:
           - title: List of notifications
             data: {}
         '''
+        if 'long_polling' in payload:
+            timeout = int(payload['long_polling']) / 1000
+            try:
+                await asyncio.wait_for(self.state_changed.wait(), timeout)
+                if self.state_changed.is_set:
+                    self.state_changed.clear()
+            except TimeoutError:
+                pass
+
         retval = {'error': 'syntax error'}
         msg_list = []
         try:

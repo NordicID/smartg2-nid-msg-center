@@ -17,6 +17,7 @@ class MsgDatabase:
         dbPath = '/systemrw/nid/msgcenter_db.json'
         dbExists = os.path.isfile(dbPath)
         self.tinydb = TinyDB(dbPath)
+        self.callBacks = []
         if(dbExists == False):
             payload = {
                 'level': 'reset',
@@ -39,6 +40,7 @@ class MsgDatabase:
             payload.update({'uuid': uuid})
         msg = Query()
         self.tinydb.upsert(payload, (msg.uuid == payload['uuid']))
+        self.notify()
         return payload['uuid']
     
     def search(self, payload: dict) -> dict:
@@ -56,7 +58,9 @@ class MsgDatabase:
 
     def remove(self, payload: dict, force=False) -> None:
         msg = Query()
-        self.tinydb.remove(msg.uuid == payload['uuid'])
+        if 'uuid' in payload:
+            self.tinydb.remove(msg.uuid == payload['uuid'])
+        self.notify()
 
     def touch(self, payload: dict) -> None:
         msg = Query()
@@ -64,3 +68,13 @@ class MsgDatabase:
         self.tinydb.update({'state': State.READ}, query)
         if 'msg' in payload:
             self.tinydb.update({'msg': payload['msg']}, query)
+        self.notify()
+
+    def register_callback(self, observerCallback):
+        if observerCallback != None:
+            self.callBacks.append(observerCallback)
+
+    def notify(self):
+        for cb in self.callBacks:
+            cb()
+        
