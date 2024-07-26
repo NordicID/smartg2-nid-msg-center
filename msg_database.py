@@ -27,7 +27,6 @@ class MsgDatabase:
                 'uuid': 'welcome'
             }
             self.insert(payload)
-        self.stateChanged = True
 
     def _create_uuid(self) -> str:
         return uuid.uuid4().hex
@@ -41,7 +40,6 @@ class MsgDatabase:
             payload.update({'uuid': uuid})
         msg = Query()
         self.tinydb.upsert(payload, (msg.uuid == payload['uuid']))
-        self.state_changed = True
         self.notify()
         return payload['uuid']
     
