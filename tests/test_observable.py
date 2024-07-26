@@ -18,7 +18,7 @@ class TestClass(TestCase, IsolatedAsyncioTestCase):
     def callBack(self):
         self.cb_called = True
 
-    async def test_remove_volatile(self):
+    async def test_callback_is_called(self):
         self.db.register_callback(self.callBack)
 
         # Case 1: callback should be called when insert is called
