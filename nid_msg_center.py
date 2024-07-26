@@ -36,10 +36,14 @@ class MsgCenterServer:
 
         self.stop_event = asyncio.Event()
 
+    async def on_database_changed(self):
+        return 0
+
     async def init_database(self, devName=None):
         if not devName:
             devName = await self._get_device_name()
         self.msg_db = MsgDatabase(devName)
+        self.msg_db.register_callback(self.on_database_changed)
 
     async def _get_device_name(self, timeout=10) -> str:
         devName = ''
